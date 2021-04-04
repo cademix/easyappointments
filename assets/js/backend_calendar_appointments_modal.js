@@ -127,16 +127,16 @@ window.BackendCalendarAppointmentsModal = window.BackendCalendarAppointmentsModa
 
             // Set the selected filter item and find the next appointment time as the default modal values.
             if ($('#select-filter-item option:selected').attr('type') == 'provider') {
-                var $providerOption = $dialog.find('#select-provider option[value="'
-                    + $('#select-filter-item').val() + '"]');
-                if ($providerOption.length === 0) { // Change the services until you find the correct.
-                    $.each($dialog.find('#select-service option'), function () {
-                        $(this).prop('selected', true).parent().change();
-                        if ($providerOption.length > 0)
-                            return false;
-                    });
+                var providerId = $('#select-filter-item').val();
+
+                var providers = GlobalVariables.availableProviders.filter(function (provider) {
+                    return provider.id == providerId;
+                });
+
+                if (providers.length) {
+                    $dialog.find('#select-service').val(providers[0].services[0]).trigger('change');
+                    $dialog.find('#select-provider').val(providerId);
                 }
-                $providerOption.prop('selected', true);
             } else {
                 $dialog.find('#select-service option[value="'
                     + $('#select-filter-item').val() + '"]').prop('selected', true);
@@ -299,6 +299,14 @@ window.BackendCalendarAppointmentsModal = window.BackendCalendarAppointmentsModa
             // Update the providers select box.
             $.each(GlobalVariables.availableProviders, function (indexProvider, provider) {
                 $.each(provider.services, function (indexService, serviceId) {
+                    if (GlobalVariables.user.role_slug === Backend.DB_SLUG_PROVIDER && parseInt(provider.id) !== GlobalVariables.user.id) {
+                        return true; // continue
+                    }
+
+                    if (GlobalVariables.user.role_slug === Backend.DB_SLUG_SECRETARY && GlobalVariables.secretaryProviders.indexOf(provider.id) === -1) {
+                        return true; // continue
+                    }
+
                     // If the current provider is able to provide the selected service, add him to the listbox.
                     if (serviceId == sid) {
                         var optionHtml = '<option value="' + provider.id + '">'
